@@ -1,0 +1,47 @@
+FUNCTION_BLOCK schedule_rating
+
+VAR_INPUT
+    load : REAL;         // Загруженность врача (%)
+    time : REAL;         // Время слота (0-23)
+    gap  : REAL;         // Интервал до предыдущего слота (в минутах)
+END_VAR
+
+VAR_OUTPUT
+    rating : REAL;       // Оценка пригодности слота
+END_VAR
+
+FUZZIFY load
+    TERM low := (0, 1) (30, 1) (50, 0);
+    TERM medium := (30, 0) (50, 1) (70, 0);
+    TERM high := (60, 0) (80, 1) (100, 1);
+END_FUZZIFY
+
+FUZZIFY time
+    TERM early := (0, 1) (8, 1) (12, 0);
+    TERM midday := (10, 0) (13, 1) (16, 0);
+    TERM late := (15, 0) (18, 1) (23, 1);
+END_FUZZIFY
+
+FUZZIFY gap
+    TERM short := (0, 1) (10, 1) (30, 0);
+    TERM medium := (20, 0) (45, 1) (60, 0);
+    TERM long := (50, 0) (70, 1) (90, 1);
+END_FUZZIFY
+
+DEFUZZIFY rating
+    TERM bad := (0, 1) (0.3, 1) (0.5, 0);
+    TERM ok := (0.4, 0) (0.6, 1) (0.8, 0);
+    TERM good := (0.7, 0) (0.9, 1) (1, 1);
+    METHOD : COG;
+    DEFAULT := 0;
+END_DEFUZZIFY
+
+RULEBLOCK rules
+    RULE 1 : IF load IS low AND gap IS long THEN rating IS good;
+    RULE 2 : IF load IS medium AND gap IS medium THEN rating IS ok;
+    RULE 3 : IF load IS high AND gap IS short THEN rating IS bad;
+    RULE 4 : IF time IS early AND load IS low THEN rating IS good;
+    RULE 5 : IF time IS late AND load IS high THEN rating IS bad;
+END_RULEBLOCK
+
+END_FUNCTION_BLOCK
